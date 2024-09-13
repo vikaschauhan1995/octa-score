@@ -1,5 +1,6 @@
 require('dotenv').config({ path: './.env' });
 const express = require('express');
+const bcrypt = require('bcrypt');
 const app = express();
 const port = process.env.PORT;
 const fs = require('fs');
@@ -45,12 +46,14 @@ app.post('/register', async (req, res) => {
     if (username?.length < 3 && username?.length > 12) throw Error("Username length must be between 3 to 12 characters long");
     if (password?.length < 3 && password?.length > 12) throw Error("password length must be between 3 to 12 characters long");
 
+    const saltRound = 10;
+    const hash = await bcrypt.hash(password, saltRound);
+    // console.log("hash=>>", hash);
     const insertQuery = `INSERT INTO "user" (username, password) VALUES($1, $2) RETURNING *`;
-    const output = await db.query(insertQuery, [username, password]);
-    console.log("output=>", output);
+    const output = await db.query(insertQuery, [username, hash]);
     const user = output?.rows?.[0];
     // [{'username':'virat'}]
-    res.status(200).json({ message: `User ${user?.username} registered successfully`});
+    res.status(200).json({ message: `User ${user?.username} registered successfully` });
   } catch (error) {
     res.status(400).json({ message: error?.message });
   }
